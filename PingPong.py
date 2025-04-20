@@ -19,7 +19,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Ping-Pong')
 
 # Фоновые настройки
-background_color = BLACK
+background_color = (kartinka.jpg)
 
 # Глобальные игровые объекты
 clock = pygame.time.Clock()
