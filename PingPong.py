@@ -1,69 +1,122 @@
-# pingPong
-from pygame import *
- 
-class GameSprite(sprite.Sprite): #Основной класс спрайта
-    def __init__(self, player_image, player_x, player_y, player_speed, size_x=65, size_y=65):
+import pygame
+import random
+
+# Инициализируем PyGame
+pygame.init()
+
+# Параметры окна
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
+
+# Основные цвета
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+
+# Настраиваем экран
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('Ping-Pong')
+
+# Фоновые настройки
+background_color = BLACK
+
+# Глобальные игровые объекты
+clock = pygame.time.Clock()
+
+# Класс ракеты
+class Paddle(pygame.sprite.Sprite):
+    def __init__(self, x_pos, y_pos):
         super().__init__()
-        self.image = transform.scale(image.load(player_image), (size_x, size_y))
-        self.speed = player_speed
+        self.image = pygame.Surface([10, 100])
+        self.image.fill(WHITE)
         self.rect = self.image.get_rect()
-        self.rect.x = player_x
-        self.rect.y = player_y
- 
-    def reset(self):
-        window.blit(self.image, (self.rect.x, self.rect.y)) 
- 
- 
-class Player(GameSprite):
+        self.rect.x = x_pos
+        self.rect.y = y_pos
+        self.speed = 10
+
+    def update(self, direction):
+        if direction == 'up' and self.rect.top > 0:
+            self.rect.y -= self.speed
+        elif direction == 'down' and self.rect.bottom < SCREEN_HEIGHT:
+            self.rect.y += self.speed
+
+# Класс мячика
+class Ball(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface([10, 10])
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect()
+        self.reset_position()
+        self.velocity = [random.choice([-5, 5]), random.randint(-5, 5)]
+
+    def reset_position(self):
+        self.rect.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        self.velocity = [random.choice([-5, 5]), random.randint(-5, 5)]
+
     def update(self):
-        keys_pressed = key.get_pressed()
-        if keys_pressed[K_a] and self.rect.x > 5:
-            self.rect.x -= self.speed
-        if keys_pressed[K_d] and self.rect.x < win_width - 80:
-            self.rect.x += self.speed
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
 
-win_width = 700
-win_height = 500
- 
-window = display.set_mode((win_width, win_height))
-display.set_caption('PingPong')
-background = transform.scale(image.load('kartinka.jpg'), (win_width, win_height))
- 
- 
-player = Player('raketka.png', 325, 400, 10)
+        # Проверка столкновения с верхним и нижним краями
+        if self.rect.y <= 0 or self.rect.y >= SCREEN_HEIGHT - 10:
+            self.velocity[1] = -self.velocity[1]
 
-font1 = font.Font(None, 35)
-lose1 = font1.render(
-    "PLAYER 1 LOSE!", True, (180, 0, 0))
+        # Проверяем выход мяча за пределы экрана
+        if self.rect.x < 0 or self.rect.x > SCREEN_WIDTH:
+            self.reset_position()
 
-font2 = font.Font(None, 35)
-lose2 = font2.render(
-    "PLAYER 2 LOSE!", True, (180, 0, 0))
+# Создание спрайтов
+player_1 = Paddle(20, SCREEN_HEIGHT / 2 - 50)
+player_2 = Paddle(SCREEN_WIDTH - 30, SCREEN_HEIGHT / 2 - 50)
+ball = Ball()
 
-clock = time.Clock()
-FPS = 60 
-game = True
-finish = False
-while game:
- 
-    for e in event.get():
-        if e.type == QUIT:
-            game = False
-    if finish == False:
-        window.blit(background, (0,0))
-        player.update()
-        player.reset()
-    if finish != True:
-       ball.rect.x += speed_x
-       ball.rect.y += speed_y
-    if ball.rect.y > win_height-50 or ball.rect.y < 0:
-       speed_y *= -1
-    if ball.rect.x < 0:
-        finish = True
-        window.blit(lose1, (200,200))
-     if ball.rect.x < 0:
-        finish = True
-        window.blit(lose2, (200,200))
+# Добавляем спрайты в группу
+all_sprites_list = pygame.sprite.Group()
+all_sprites_list.add(player_1, player_2, ball)
 
-    display.update()
+# Основной игровой цикл
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Управление первой ракеткой (игрок №1)
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_w]:  
+        player_1.update('up')  # движение вверх
+    if keys[pygame.K_s]:  
+        player_1.update('down')  # движение вниз
+
+    # Управление второй ракеткой (игрок №2)
+    if keys[pygame.K_UP]:  
+        player_2.update('up')  # движение вверх
+    if keys[pygame.K_DOWN]:  
+        player_2.update('down')  # движение вниз
+
+    # Обновляем позицию мяча
+    ball.update()
+
+    # Проверка столкновений между мячом и ракетками
+    collision_with_player1 = pygame.sprite.collide_rect(ball, player_1)
+    collision_with_player2 = pygame.sprite.collide_rect(ball, player_2)
+
+    if collision_with_player1 or collision_with_player2:
+        ball.velocity[0] = -ball.velocity[0]
+
+    # Очистка экрана
+    screen.fill(background_color)
+
+    # Рисование всех объектов
+    all_sprites_list.draw(screen)
+
+    # Обновляем экран
+    pygame.display.flip()
+
+    # Ограничение FPS
     clock.tick(FPS)
+
+# Завершаем игру
+pygame.quit()
