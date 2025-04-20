@@ -32,6 +32,14 @@ background = transform.scale(image.load('kartinka.jpg'), (win_width, win_height)
  
 player = Player('raketka.png', 325, 400, 10)
 
+font1 = font.Font(None, 35)
+lose1 = font1.render(
+    "PLAYER 1 LOSE!", True, (180, 0, 0))
+
+font2 = font.Font(None, 35)
+lose2 = font2.render(
+    "PLAYER 2 LOSE!", True, (180, 0, 0))
+
 clock = time.Clock()
 FPS = 60 
 game = True
@@ -45,7 +53,17 @@ while game:
         window.blit(background, (0,0))
         player.update()
         player.reset()
-
+    if finish != True:
+       ball.rect.x += speed_x
+       ball.rect.y += speed_y
+    if ball.rect.y > win_height-50 or ball.rect.y < 0:
+       speed_y *= -1
+    if ball.rect.x < 0:
+        finish = True
+        window.blit(lose1, (200,200))
+     if ball.rect.x < 0:
+        finish = True
+        window.blit(lose2, (200,200))
 
     display.update()
     clock.tick(FPS)
